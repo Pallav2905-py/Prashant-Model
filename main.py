@@ -10,6 +10,13 @@ CORS(app)
 with open('model.pkl', 'rb') as file:
     data, similarity_matrix = pickle.load(file)
 
+# Load the CSV file with the images
+book1_data = pd.read_csv('Book1.csv')
+
+# Merge the image data into the existing dataset
+data = pd.merge(data, book1_data[['District', 'Taluka', 'Equipment', 'images']],
+                on=['District', 'Taluka', 'Equipment'], how='left')
+
 # Recommendation function
 def recommend_by_district_taluka(district, taluka, num_recommendations=5):
     # Filter data based on the provided district and taluka
@@ -30,6 +37,10 @@ def recommend_by_district_taluka(district, taluka, num_recommendations=5):
         similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
         top_indices = [filtered_indices[s[0]] for s in similarity_scores[1:num_recommendations + 1]]
         recommendations.extend(data.iloc[top_indices].to_dict(orient='records'))
+
+    # Add the image field to each recommendation if it exists
+    for recommendation in recommendations:
+        recommendation['image'] = recommendation.get('images', 'No image available')
 
     return recommendations[:num_recommendations]
 
